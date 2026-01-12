@@ -1,0 +1,19 @@
+trigger:
+- master
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+- checkout: self
+
+- task: CopyFiles@2
+  inputs:
+    SourceFolder: 'Devops/mywebsite'
+    Contents: '**'
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/mywebsite'
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    pathToPublish: '$(Build.ArtifactStagingDirectory)'
+    artifactName: mywebsite-artifact
