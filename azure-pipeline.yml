@@ -1,0 +1,50 @@
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+# 1️⃣ Checkout source code
+- checkout: self
+
+# 2️⃣ Debug – confirm repo structure (VERY IMPORTANT)
+- script: |
+    echo "Listing source files"
+    ls -R $(Build.SourcesDirectory)
+  displayName: 'Verify source folder'
+
+# 3️⃣ Copy files to Artifact Staging Directory
+- task: CopyFiles@2
+  inputs:
+    SourceFolder: 'Devops/website2-linking-vm-apchi'
+    Contents: '**'
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/website2-linking-vm-apchi'
+  displayName: 'Prepare artifact files'
+
+# 4️⃣ Publish Artifact (CI OUTPUT)
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)/website2-linking-vm-apchi'
+    ArtifactName: 'website-artifact'
+    publishLocation: 'Container'
+  displayName: 'Publish website artifact'
+
+# 5️⃣ Deploy Artifact to Linux VM
+- task: CopyFilesOverSSH@0
+  inputs:
+    sshEndpoint: 'Linux-VM-SSH'
+    sourceFolder: '$(Build.ArtifactStagingDirectory)/website2-linking-vm-apchi'
+    contents: '**'
+    targetFolder: '/var/www/html/website2-linking-vm-apchi'
+    cleanTargetFolder: true
+  displayName: 'Deploy to Linux VM'
+
+# Restart Apache
+- task: SSH@0
+  inputs:
+    sshEndpoint: 'Linux-VM-SSH'
+    runOptions: inline
+    inline: |
+      sudo systemctl restart apache2
+  displayName: 'Restart Apache'
